@@ -3,11 +3,18 @@ include_once "./constants.php";
 require __DIR__ . '/vendor/autoload.php';
 use Firebase\JWT\JWT;
 
-function handleAuthorizationCode(
+
+/**
+ * On Success, response will be 
+ *  {data: {accessToken, expiresIn}, error: null}
+ * 
+ * On Failure, response will be
+ * {data: null, error: {statusCode: http error code, message: 'some description of error'}}
+ */
+function getAccessToken(
     $authorizationCode
 ) {
     $tokenEndPoint = ESIGNET_SERVICE_URL . "/v1/esignet/oauth/token";
-    echo ($tokenEndPoint);
     $clientId = CLIENT_ID;
     $private_key_resource = openssl_get_privatekey(CLIENT_PRIVATE_KEY);
     $header = array(
@@ -47,16 +54,53 @@ function handleAuthorizationCode(
         $tokenData = json_decode($tokenResponse, true);
         $accessToken = $tokenData['access_token'];
         $expiresIn = time() + $tokenData['expires_in'];
+
+        $response = [
+            "data" => [
+                "accessToken" => $accessToken,
+                "expiresIn" => $expiresIn
+            ],
+            "error" => null
+        ];
+        return $response;
+    } else {
+        $response = [
+            "data" => null,
+            "error" => [
+                "statusCode" => $httpCode,
+                "message" => "not able to get access token" 
+            ]
+        ];
+        return $response;  
+    }
+
+}
+
+function handleAuthorizationCode(
+    $authorizationCode,
+) {
+   
+    $response = getAccessToken(
+        $authorizationCode,
+    );
+
+    if ($response['error'] !== null) {   
+        $error = $response['error'];
+        echo ("http code error" . $error['statusCode']);
+        echo ("Reason" . $error['message']);
+        return;
+    }
+
+    if ($response['data'] !== null) {
+        $data = $response['data'];
+        $accessToken = $data['accessToken'];
+        $expiresIn = $data['expiresIn'];
         $cookieName = 'access_token';
         setcookie($cookieName, $accessToken, $expiresIn, '/');
-        $accessToken = $tokenData['access_token'];
         session_start();
-        $_SESSION['access_token'] = $accessToken;
-        header('Location: user.php');
-        exit();
-    } else {
-        echo "$tokenEndPoint";
-        echo ("http code error" . "$httpCode");
+        $_SESSION['esignet_access_token'] = $accessToken;
+        header('Location: dashboard.php');
+        return;
     }
 }
 

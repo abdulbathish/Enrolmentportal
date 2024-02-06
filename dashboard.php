@@ -1,89 +1,45 @@
 <?php
-
-if (session_status() == PHP_SESSION_NONE) {
-  session_start();
-}
-
-if (!isset($_SESSION['access_token'])) {
-  header('Location: login.php');
-  exit();
-}
-
 include './header.php';
 require_once './connection.php';
+require_once './helpers/user-session.php';
+require_once './helpers/vote.php';
 
-function decodeUserInfo($encodedUserInfo)
-{
-  $parts = explode('.', $encodedUserInfo);
+$loggedInUser = getLoggedInUser($db_conn);
 
-  if (isset($parts[1])) {
-    $payloadJsonStr = base64_decode($parts[1]);
-    $payload = json_decode($payloadJsonStr, true);
-    return $payload;
+if ($loggedInUser !== null && $loggedInUser['login_type'] === 'local') {
+  $voter = $loggedInUser['user'];
+  $voter_ID = $voter['voter_ID'];
+
+      $name = $voter['name'];
+      $gender = $voter['gender'];
+      $dateOfBirth = $voter['birthdate'];
+  $address = "not available";
+  $voter_unique_id = $voter_ID;
+  $phoneNumber = "not available";
+  $email = "not available";
+  $dobFmt = 'Y-m-d';
+} 
+
+
+if ($loggedInUser !== null && $loggedInUser['login_type'] === 'esignet') {
+  $user = $loggedInUser['user'];
+  $name = isset($user['name']) ? $user['name'] : "name not set" ;
+  $gender = $user['gender'];
+  $dateOfBirth = $user['birthdate'];
+  $address = $user['address']['street_address'] . $user['address']['locality'];
+  $voter_unique_id = $user['sub'];
+  $phoneNumber = $user['phone_number'];
+  $email = $user['email'];
+  $dobFmt = 'Y/m/d';
+}
+
+
+  if (isset($_POST['_action']) && $_POST['_action'] = 'insert-vote') {
+    insertVoter($db_conn, $voter_unique_id);
   }
-}
-
-function getUserInfo($accessToken)
-{
-  $url = ESIGNET_SERVICE_URL . "/v1/esignet/oidc/userinfo";
-  $curl = curl_init();
-
-  curl_setopt($curl, CURLOPT_URL, $url);
-  curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-  curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'GET');
-  curl_setopt($curl, CURLOPT_HTTPHEADER, [
-    'Authorization: Bearer ' . $accessToken,
-  ]);
-  // ENAABLE IN PROD
-  // curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, true);
-  // curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 2);
 
 
-  $response = curl_exec($curl);
-  $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-  curl_close($curl);
-  if ($httpCode == 200) {
-    return decodeUserInfo($response);
-  } else {
-    echo 'Error: ' . $httpCode;
-  }
-}
-
-function hasAlreadyVoted($db_conn, $voter_id)
-{
-  $stmt = $db_conn->prepare("SELECT * FROM voters WHERE voter_id = ?");
-  $stmt->bind_param("s", $voter_id);
-  $stmt->execute();
-  $stmt->store_result();
-  return $stmt->num_rows > 0;
-}
-
-function isPersonMajor($dateOfBirthString)
-{
-  $DOB = DateTime::createFromFormat('Y/m/d', $dateOfBirthString);
-  $currentDate = new DateTime();
-
-  $age = $currentDate->diff($DOB)->y;
-
-  return $age >= 18;
-}
-
-//$userInfo = decodeUserInfo('eyJraWQiOiIxcldMMDJXaE0tZ2JIT2NkRTZzTXprSklaM2ZUSkNMcktxRlBYS3NDd0cwIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiIyNzMzNTQwMjQ0ODM3MTIzOTg0ODgwMzU0NDY4OTQyMDc0OTEiLCJiaXJ0aGRhdGUiOiIxOTk0LzAxLzAxIiwiYWRkcmVzcyI6eyJzdHJlZXRfYWRkcmVzcyI6ImRmd2VmIHdyZWtuZXJmICAiLCJsb2NhbGl0eSI6IkJlbmdhbHVydSJ9LCJnZW5kZXIiOiJNYWxlIiwiZW1haWwiOiJCQVRISVNIMTIzQEdNQUlMLkNPTSJ9.Zsax1pHacuEHzBG3py9JqgPfKvKmGXD-u684zCs8yjl66mUBdPQjj2wC8ZdQ_IuqQR3eQdf0xbiw4zyxESt2QMsrUBrRacqCi2D8FxZBfBFpP8QOClH26v9WRrVRMHneUwJKuvwjt566hjTGmSGWVcCWCUN6iS03iMg4o6Pr92zs_r-jF_TyyIbsqlnuniSLfZUe0wLbn9b-iw2WVnG2nFmBSpIxa0-gYGlEaob9VroGqyLIO8djXPZji1BY8ZU2wDDn7c0UMrFvSpKErfpmc6TryVYtKvj08sSbaZVqmKS59d5UGGEkMXlhHUjyVU_jXVPG4e_vkQUFGDi24Tc8Nw');
-
-
-
-$accessToken = $_COOKIE['access_token'];
-$userInfo = getUserInfo($accessToken);
-//print_r($userInfo);
-
-$alreadyVoted = hasAlreadyVoted($db_conn, $userInfo['sub']);
-
-if(array_key_exists('name', $userInfo)){
-  $name = $userInfo['name'];
-}
-else {
-  $name = 'Name Not Available';
-}
+$alreadyVoted = hasAlreadyVoted($db_conn, $voter_unique_id);
 $Elections = array("Lok Sabha 2024", "Kerala State Election");
 ?>
 
@@ -126,7 +82,10 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
         <!-- <h1 class="text-base font-semibold leading-10 text-gray-900"> -->
         <h2 class="max-w-2xl text-4xl font-semibold text-gray-700 sm:text-2xl lg:col-span-2 xl:col-auto">User Details
         </h2>
-        <p class="mt-1 text-sm leading-6 text-gray-500">Information received from eSignet system</p>
+        <p class="mt-1 text-sm leading-6 text-gray-500">
+          Information received from <?php echo $loggedInUser['login_type'] ?> 
+          system
+        </p>
 
         <dl class="mt-6 space-y-6 divide-y divide-gray-100 border-t border-gray-200 text-sm leading-6">
           <div class="pt-6 sm:flex">
@@ -142,7 +101,7 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
             <dt class="font-medium text-gray-900 sm:w-64 sm:flex-none sm:pr-6">Email address</dt>
             <dd class="mt-1 flex justify-between gap-x-6 sm:mt-0 sm:flex-auto">
               <div class="text-gray-900">
-                <?php echo $userInfo['email']; ?>
+                <?php echo $email; ?>
               </div>
               <button type="button" class="font-semibold text-green-600 hover:text-green-500">Verified</button>
             </dd>
@@ -151,7 +110,7 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
             <dt class="font-medium text-gray-900 sm:w-64 sm:flex-none sm:pr-6">Unique ID</dt>
             <dd class="mt-1 flex justify-between gap-x-6 sm:mt-0 sm:flex-auto">
               <div class="text-gray-900">
-                <?php echo $userInfo['sub']; ?>
+                <?php echo $voter_unique_id; ?>
               </div>
               <button type="button" class="font-semibold text-green-600 hover:text-green-500">Verified</button>
             </dd>
@@ -160,7 +119,7 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
             <dt class="font-medium text-gray-900 sm:w-64 sm:flex-none sm:pr-6">Date of birth</dt>
             <dd class="mt-1 flex justify-between gap-x-6 sm:mt-0 sm:flex-auto">
               <div class="text-gray-900">
-                <?php echo $userInfo['birthdate']; ?>
+                <?php echo $dateOfBirth; ?>
               </div>
               <button type="button" class="font-semibold text-green-600 hover:text-green-500">Verified</button>
             </dd>
@@ -169,7 +128,7 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
             <dt class="font-medium text-gray-900 sm:w-64 sm:flex-none sm:pr-6">Phone Number</dt>
             <dd class="mt-1 flex justify-between gap-x-6 sm:mt-0 sm:flex-auto">
               <div class="text-gray-900">
-                <?php echo $userInfo['phone_number']; ?>
+                <?php echo $phoneNumber; ?>
               </div>
               <button type="button" class="font-semibold text-green-600 hover:text-green-500">Verified</button>
             </dd>
@@ -178,7 +137,7 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
             <dt class="font-medium text-gray-900 sm:w-64 sm:flex-none sm:pr-6">Gender</dt>
             <dd class="mt-1 flex justify-between gap-x-6 sm:mt-0 sm:flex-auto">
               <div class="text-gray-900">
-                <?php echo $userInfo['gender']; ?>
+                <?php echo $gender; ?>
               </div>
               <button type="button" class="font-semibold text-green-600 hover:text-green-500">Verified</button>
             </dd>
@@ -186,10 +145,9 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
           <div class="pt-6 sm:flex">
             <dt class="font-medium text-gray-900 sm:w-64 sm:flex-none sm:pr-6">Address</dt>
             <dd class="mt-1 flex justify-between gap-x-6 sm:mt-0 sm:flex-auto">
-              <div class="text-gray-900">
-                <?php echo $userInfo['address']['street_address']; ?>,
-                <?php echo $userInfo['address']['locality']; ?>
-              </div>
+              <p class="text-gray-900">
+                <?php echo $address; ?>
+              </p>
               <button type="button" class="font-semibold text-green-600 hover:text-green-500">Verified</button>
             </dd>
           </div>
@@ -206,22 +164,26 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
               <?php echo $Elections[0]; ?>
             </dt>
             <dd class="mt-1 flex justify-between gap-x-6 sm:mt-0 sm:flex-auto">
-
               <?php
-              if (isPersonMajor($userInfo['birthdate'])) {
+              if (isPersonMajor($dateOfBirth, $dobFmt)) {
                 echo '<div class="text-gray-900">Eligible</div>';
               } else {
                 echo '<div class="text-gray-900">Not Eligible</div>';
               }
 
-              if (!$alreadyVoted) {
-                echo '<div class="text-gray-900">Pending</div>';
-                echo '<button type="button" class="font-semibold text-red-600 hover:text-blue-500 text-md" onclick="redirectToVote()">Enroll</button>';
-              } else {
-                echo '<div class="text-gray-900">Success</div>';
-                echo '<button type="button" class="font-semibold text-green-600 hover:text-green-500">Enrolled</button>';
-              }
               ?>
+
+    <p class="text-gray-900"><?php echo ($alreadyVoted ? "Success" : "Pending") ?></p>
+    <form action='#Enroll' method='POST'>
+      <input type='hidden' name='_action' value='insert-vote' />
+      <button 
+        <?php echo ($alreadyVoted ? "disabled" : "") ?> 
+        type="submit" 
+        class="font-semibold <?php echo ($alreadyVoted ? "text-green-600" : "text-red-600 hover:text-blue-500") ?>  text-md">
+        <?php echo ($alreadyVoted ? "Enrolled" : "Enroll") ?>
+      </button>
+    </form>
+            
             </dd>
           </div>
           <div class="pt-6 sm:flex">
@@ -243,8 +205,4 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
 <?php
 include './footer.php';
 ?>
-<script>
-  function redirectToVote() {
-    window.location.href = 'vote.php';
-  }
-</script>
+

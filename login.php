@@ -1,5 +1,12 @@
 <?php
-include './header.php';
+require_once './connection.php';
+require 'helpers/local-user.php';
+require 'helpers/user-session.php';
+
+if (session_status() == PHP_SESSION_NONE) {
+  session_start();
+}
+
 $actionUrl = ESIGNET_SERVICE_URL . "/authorize";
 function generateNonce($length = 6)
 {
@@ -9,14 +16,40 @@ function generateNonce($length = 6)
   return bin2hex($timestampSalt . $randomBytes);
 }
 $nonce = generateNonce();
+
+
+$localLogin = null;
+if (isset($_POST["voterid"])) {
+  $voter_ID = $_POST["voterid"];
+  $password = $_POST["password"];
+  $localLogin = verfiyLogin($voter_ID, $password, $db_conn);
+
+}
+
+
+if ($localLogin !== null && $localLogin['data'] !== null) {
+  $_SESSION['local_ID_login'] = $localLogin['data']['voter_ID']; 
+}
+
+$loggedInUser = getLoggedInUser($db_conn);
+
+if($loggedInUser !== null) {
+  echo "succesfull login";
+ header('Location: dashboard.php'); 
+ exit();
+}
+
+
+include './header.php';
 ?>
 
-<body>
 
+
+<body>
   <div class="flex min-h-full flex-col justify-center py-12 sm:px-6 lg:px-8">
-    <div class="sm:mx-auto sm:w-full sm:max-w-md">
-      <img class="mx-auto h-10 w-auto" src="pictures/mosip.png"
-        alt="Your Company">
+  <div class="sm:mx-auto sm:w-full sm:max-w-md">
+      <img class="mx-auto h-10 w-auto" src="pictures/logo.png"
+        alt="MOSIP">
       <h2 class="mt-6 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">Voter ID login</h2>
     </div>
 

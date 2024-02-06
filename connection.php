@@ -7,7 +7,7 @@ if ($db_conn->connect_error) {
 }
 
 
-function initSchema($db_conn)
+function initEnrolTable($db_conn)
 {
 
     $sql = "CREATE TABLE IF NOT EXISTS voters (
@@ -17,10 +17,24 @@ function initSchema($db_conn)
 )";
 
     if (!$db_conn->query($sql)) {
-        die("Error creating table: " . $db_conn->error);
+        die("Error creating voters table: " . $db_conn->error);
     }
+
 }
 
-initSchema($db_conn);
+function initLocalTable($db_conn){
+    $sql = "CREATE TABLE IF NOT EXISTS users (
+        voter_ID INT PRIMARY KEY AUTO_INCREMENT,
+        password VARCHAR(255) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        gender VARCHAR(10) NOT NULL,
+        birthdate DATE NOT NULL
+    )AUTO_INCREMENT=112233;";
+    
+        if (!$db_conn->query($sql)) {
+            die("Error creating users table: " . $db_conn->error);
+        }
+}
 
-?>
+initEnrolTable($db_conn);
+initLocalTable($db_conn);

@@ -1,8 +1,15 @@
 <?php
-
 include_once './constants.php';
+require_once './connection.php';
+require_once './helpers/user-session.php';
+
+if (session_status() == PHP_SESSION_NONE) {
+  session_start();
+}
+
+$loggedInUser = getLoggedInUser($db_conn);
 $pageTitle = "";
-$cookieDetailsFound = isset($_SESSION['access_token']);
+$cookieDetailsFound = $loggedInUser !== null;
 
 if ($cookieDetailsFound) {
   $buttonClass = "relative inline-flex items-center gap-x-1.5 rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white  shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600";
@@ -62,7 +69,7 @@ if ($cookieDetailsFound) {
               </button>
             </div>
             <div class="flex flex-shrink-0 items-center">
-              <img class="h-8 w-auto" src="pictures/mosip.png" alt="MOSIP">
+              <img class="h-8 w-auto" src="pictures/logo.png" alt="MOSIP">
             </div>
             <div class="hidden md:ml-6 md:flex md:space-x-8">
               <!-- Current: "border-indigo-500 text-gray-900", Default: "border-transparent text-white hover:border-gray-300 hover:text-gray-700" -->
@@ -75,7 +82,7 @@ if ($cookieDetailsFound) {
                 class="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-white hover:border-gray-100 hover:text-gray-500">MOSIP</a>
               <?php
               if ($cookieDetailsFound) {
-                echo '<a href="user.php" class="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-white hover:border-gray-100 hover:text-gray-500">Profile</a>';
+                echo '<a href="dashboard.php" class="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-white hover:border-gray-100 hover:text-gray-500">Profile</a>';
               } ?>
 
             </div>
