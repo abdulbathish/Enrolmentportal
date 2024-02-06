@@ -6,8 +6,8 @@ Welcome to the Election Enrollment System GitHub repository! This project provid
 
 1. **Clone the Repository**:
    ```bash
-   git clone .git
-   cd election-enrollment
+   git clone https://github.com/abdulbathish/Enrolmentportal.git
+   cd Enrolmentportal
    ```
 
 2. **Set Up Constants**:
