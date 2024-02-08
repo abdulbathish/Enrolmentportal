@@ -10,14 +10,15 @@ if ($loggedInUser !== null && $loggedInUser['login_type'] === 'local') {
   $voter = $loggedInUser['user'];
   $voter_ID = $voter['voter_ID'];
 
-      $name = $voter['name'];
-      $gender = $voter['gender'];
-      $dateOfBirth = $voter['birthdate'];
+  $name = $voter['name'];
+  $gender = $voter['gender'];
+  $dateOfBirth = $voter['birthdate'];
   $address = "not available";
   $voter_unique_id = $voter_ID;
   $phoneNumber = "not available";
   $email = "not available";
   $dobFmt = 'Y-m-d';
+  $status = 'Not Verified';
 } 
 
 
@@ -31,6 +32,7 @@ if ($loggedInUser !== null && $loggedInUser['login_type'] === 'esignet') {
   $phoneNumber = $user['phone_number'];
   $email = $user['email'];
   $dobFmt = 'Y/m/d';
+  $status = 'Verified';
 }
 
 
@@ -94,7 +96,7 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
               <div class="text-gray-900">
                 <?php echo $name; ?>
               </div>
-              <button type="button" class="font-semibold text-green-600 hover:text-green-500">Verified</button>
+              <button type="button" class="font-semibold text-green-600 hover:text-green-500"><?php echo $status?></button>
             </dd>
           </div>
           <div class="pt-6 sm:flex">
@@ -103,7 +105,7 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
               <div class="text-gray-900">
                 <?php echo $email; ?>
               </div>
-              <button type="button" class="font-semibold text-green-600 hover:text-green-500">Verified</button>
+              <button type="button" class="font-semibold text-green-600 hover:text-green-500"><?php echo $status?></button>
             </dd>
           </div>
           <div class="pt-6 sm:flex">
@@ -112,7 +114,7 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
               <div class="text-gray-900">
                 <?php echo $voter_unique_id; ?>
               </div>
-              <button type="button" class="font-semibold text-green-600 hover:text-green-500">Verified</button>
+              <button type="button" class="font-semibold text-green-600 hover:text-green-500"><?php echo $status?></button>
             </dd>
           </div>
           <div class="pt-6 sm:flex">
@@ -121,7 +123,7 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
               <div class="text-gray-900">
                 <?php echo $dateOfBirth; ?>
               </div>
-              <button type="button" class="font-semibold text-green-600 hover:text-green-500">Verified</button>
+              <button type="button" class="font-semibold text-green-600 hover:text-green-500"><?php echo $status?></button>
             </dd>
           </div>
           <div class="pt-6 sm:flex">
@@ -130,7 +132,7 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
               <div class="text-gray-900">
                 <?php echo $phoneNumber; ?>
               </div>
-              <button type="button" class="font-semibold text-green-600 hover:text-green-500">Verified</button>
+              <button type="button" class="font-semibold text-green-600 hover:text-green-500"><?php echo $status?></button>
             </dd>
           </div>
           <div class="pt-6 sm:flex">
@@ -139,7 +141,7 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
               <div class="text-gray-900">
                 <?php echo $gender; ?>
               </div>
-              <button type="button" class="font-semibold text-green-600 hover:text-green-500">Verified</button>
+              <button type="button" class="font-semibold text-green-600 hover:text-green-500"><?php echo $status?></button>
             </dd>
           </div>
           <div class="pt-6 sm:flex">
@@ -148,7 +150,7 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
               <p class="text-gray-900">
                 <?php echo $address; ?>
               </p>
-              <button type="button" class="font-semibold text-green-600 hover:text-green-500">Verified</button>
+              <button type="button" class="font-semibold text-green-600 hover:text-green-500"><?php echo $status?></button>
             </dd>
           </div>
         </dl>
