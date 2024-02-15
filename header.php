@@ -9,17 +9,17 @@ if (session_status() == PHP_SESSION_NONE) {
 
 $loggedInUser = getLoggedInUser($db_conn);
 $pageTitle = "";
-$cookieDetailsFound = $loggedInUser !== null;
+$isLoggedIn = $loggedInUser !== null;
 
-if ($cookieDetailsFound) {
-  $buttonClass = "relative inline-flex items-center gap-x-1.5 rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white  shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600";
-  $buttonText = "Logout";
-  $redirectTo = "logout.php";
-} else {
-  $buttonClass = "relative inline-flex items-center gap-x-1.5 rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white  shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600";
-  $buttonText = "Login";
-  $redirectTo = "login.php";
+
+$buttonClass = $isLoggedIn ? "relative inline-flex items-center gap-x-1.5 rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600" : "relative inline-flex items-center gap-x-1.5 rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600";
+$buttonText = $isLoggedIn ? "Logout" : "Login";
+$redirectTo = $isLoggedIn ? "logout.php" : "login.php";
+
+if ($isLoggedIn) {
+    $photo = $loggedInUser['login_type'] === 'esignet' ? $loggedInUser['user']['picture'] : 'pictures/nophoto.png';
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -81,7 +81,7 @@ if ($cookieDetailsFound) {
               <a href="https://mosip.io"
                 class="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-white hover:border-gray-100 hover:text-gray-500">MOSIP</a>
               <?php
-              if ($cookieDetailsFound) {
+              if ($loggedInUser) {
                 echo '<a href="dashboard.php" class="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-white hover:border-gray-100 hover:text-gray-500">Profile</a>';
               } ?>
 
@@ -107,14 +107,21 @@ if ($cookieDetailsFound) {
             <div class="hidden md:ml-4 md:flex md:flex-shrink-0 md:items-center">
 
               <!-- Profile dropdown -->
+
               <div class="relative ml-3">
                 <div>
-                  <!-- <button type="button" class="relative flex rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2" id="user-menu-button" aria-expanded="false" aria-haspopup="true">
-                <span class="absolute -inset-1.5"></span>
-                <span class="sr-only">Open user menu</span>
-                <img class="h-8 w-8 rounded-full" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="">
-              </button> -->
+
+                  <button type="button"
+                    class="relative flex rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                    id="user-menu-button" aria-expanded="false" aria-haspopup="true">
+                    <?php
+                    if ($isLoggedIn) {
+                      echo '<img class="h-8 w-8 rounded-full" src="' . $photo . '" alt="">';
+                    }
+                    ?>
+                  </button>
                 </div>
+
               </div>
             </div>
           </div>
@@ -133,8 +140,8 @@ if ($cookieDetailsFound) {
           <a href="https://mosip.io"
             class="block border-l-4 border-transparent py-2 pl-3 pr-4 text-base font-medium text-white hover:border-gray-300 hover:bg-gray-50 hover:text-gray-700 sm:pl-5 sm:pr-6">MOSIP</a>
           <?php
-          if ($cookieDetailsFound) {
-            echo '<a href="user.php" class="block border-l-4 border-transparent py-2 pl-3 pr-4 text-base font-medium text-white hover:border-gray-300 hover:bg-gray-50 hover:text-gray-700 sm:pl-5 sm:pr-6">Profile</a>';
+          if ($isLoggedIn) {
+            echo '<a href="dashboard.php" class="block border-l-4 border-transparent py-2 pl-3 pr-4 text-base font-medium text-white hover:border-gray-300 hover:bg-gray-50 hover:text-gray-700 sm:pl-5 sm:pr-6">Profile</a>';
           } ?>
 
         </div>

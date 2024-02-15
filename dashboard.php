@@ -9,7 +9,6 @@ $loggedInUser = getLoggedInUser($db_conn);
 if ($loggedInUser !== null && $loggedInUser['login_type'] === 'local') {
   $voter = $loggedInUser['user'];
   $voter_ID = $voter['voter_ID'];
-
   $name = $voter['name'];
   $gender = $voter['gender'];
   $dateOfBirth = $voter['birthdate'];
@@ -19,36 +18,40 @@ if ($loggedInUser !== null && $loggedInUser['login_type'] === 'local') {
   $email = "not available";
   $dobFmt = 'Y-m-d';
   $status = 'Not Verified';
-} 
+  $image = 'pictures/nophoto.png';
 
+}
 
 if ($loggedInUser !== null && $loggedInUser['login_type'] === 'esignet') {
   $user = $loggedInUser['user'];
-  $name = isset($user['name']) ? $user['name'] : "name not set" ;
+  $name = isset($user['name']) ? $user['name'] : "Name Not Present";
   $gender = $user['gender'];
   $dateOfBirth = $user['birthdate'];
   $address = $user['address']['street_address'] . $user['address']['locality'];
   $voter_unique_id = $user['sub'];
-  $phoneNumber = $user['phone_number'];
+  $phoneNumber = isset($user['phone_number']) ? $user['phone_number'] : "Consent Was Not Provided";
   $email = $user['email'];
   $dobFmt = 'Y/m/d';
   $status = 'Verified';
+  $image = $user['picture'];
 }
 
-
-  if (isset($_POST['_action']) && $_POST['_action'] = 'insert-vote') {
-    insertVoter($db_conn, $voter_unique_id);
-  }
-
+if (isset($_POST['_action']) && $_POST['_action'] = 'insert-vote') {
+  insertVoter($db_conn, $voter_unique_id);
+}
 
 $alreadyVoted = hasAlreadyVoted($db_conn, $voter_unique_id);
 $Elections = array("Lok Sabha 2024", "Kerala State Election");
-?>
 
+?>
 
 <div class="mx-auto max-w-7xl pt-0 lg:flex lg:gap-x-16 lg:px-8">
   <aside
     class="flex overflow-x-auto border-b border-gray-900/5 py-4 lg:block lg:w-64 lg:flex-none lg:border-0 lg:py-20">
+    <figure class="max-w-lg">
+      <?php echo '<img class="h-auto max-w-full rounded-lg" src="' . $image . '" alt="image description">'; ?>
+      <figcaption class="mt-2 text-sm text-center text-gray-500 dark:text-gray-400">Profile Photo</figcaption>
+    </figure>
     <nav class="flex-none px-4 sm:px-6 lg:px-0">
       <ul role="list" class="flex gap-x-3 gap-y-1 whitespace-nowrap lg:flex-col">
         <li>
@@ -85,7 +88,8 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
         <h2 class="max-w-2xl text-4xl font-semibold text-gray-700 sm:text-2xl lg:col-span-2 xl:col-auto">User Details
         </h2>
         <p class="mt-1 text-sm leading-6 text-gray-500">
-          Information received from <?php echo $loggedInUser['login_type'] ?> 
+          Information received from
+          <?php echo $loggedInUser['login_type'] ?>
           system
         </p>
 
@@ -96,7 +100,9 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
               <div class="text-gray-900">
                 <?php echo $name; ?>
               </div>
-              <button type="button" class="font-semibold text-green-600 hover:text-green-500"><?php echo $status?></button>
+              <button type="button" class="font-semibold text-green-600 hover:text-green-500">
+                <?php echo $status ?>
+              </button>
             </dd>
           </div>
           <div class="pt-6 sm:flex">
@@ -105,7 +111,9 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
               <div class="text-gray-900">
                 <?php echo $email; ?>
               </div>
-              <button type="button" class="font-semibold text-green-600 hover:text-green-500"><?php echo $status?></button>
+              <button type="button" class="font-semibold text-green-600 hover:text-green-500">
+                <?php echo $status ?>
+              </button>
             </dd>
           </div>
           <div class="pt-6 sm:flex">
@@ -114,7 +122,9 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
               <div class="text-gray-900">
                 <?php echo $voter_unique_id; ?>
               </div>
-              <button type="button" class="font-semibold text-green-600 hover:text-green-500"><?php echo $status?></button>
+              <button type="button" class="font-semibold text-green-600 hover:text-green-500">
+                <?php echo $status ?>
+              </button>
             </dd>
           </div>
           <div class="pt-6 sm:flex">
@@ -123,7 +133,9 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
               <div class="text-gray-900">
                 <?php echo $dateOfBirth; ?>
               </div>
-              <button type="button" class="font-semibold text-green-600 hover:text-green-500"><?php echo $status?></button>
+              <button type="button" class="font-semibold text-green-600 hover:text-green-500">
+                <?php echo $status ?>
+              </button>
             </dd>
           </div>
           <div class="pt-6 sm:flex">
@@ -132,7 +144,9 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
               <div class="text-gray-900">
                 <?php echo $phoneNumber; ?>
               </div>
-              <button type="button" class="font-semibold text-green-600 hover:text-green-500"><?php echo $status?></button>
+              <button type="button" class="font-semibold text-green-600 hover:text-green-500">
+                <?php echo $status ?>
+              </button>
             </dd>
           </div>
           <div class="pt-6 sm:flex">
@@ -141,7 +155,9 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
               <div class="text-gray-900">
                 <?php echo $gender; ?>
               </div>
-              <button type="button" class="font-semibold text-green-600 hover:text-green-500"><?php echo $status?></button>
+              <button type="button" class="font-semibold text-green-600 hover:text-green-500">
+                <?php echo $status ?>
+              </button>
             </dd>
           </div>
           <div class="pt-6 sm:flex">
@@ -150,12 +166,13 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
               <p class="text-gray-900">
                 <?php echo $address; ?>
               </p>
-              <button type="button" class="font-semibold text-green-600 hover:text-green-500"><?php echo $status?></button>
+              <button type="button" class="font-semibold text-green-600 hover:text-green-500">
+                <?php echo $status ?>
+              </button>
             </dd>
           </div>
         </dl>
       </div>
-
       <div>
         <h2 id="Enroll" class="max-w-2xl text-4xl font-semibold text-gray-700 sm:text-2xl lg:col-span-2 xl:col-auto">
           Election Details</h2>
@@ -175,17 +192,17 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
 
               ?>
 
-    <p class="text-gray-900"><?php echo ($alreadyVoted ? "Success" : "Pending") ?></p>
-    <form action='#Enroll' method='POST'>
-      <input type='hidden' name='_action' value='insert-vote' />
-      <button 
-        <?php echo ($alreadyVoted ? "disabled" : "") ?> 
-        type="submit" 
-        class="font-semibold <?php echo ($alreadyVoted ? "text-green-600" : "text-red-600 hover:text-blue-500") ?>  text-md">
-        <?php echo ($alreadyVoted ? "Enrolled" : "Enroll") ?>
-      </button>
-    </form>
-            
+              <p class="text-gray-900">
+                <?php echo ($alreadyVoted ? "Success" : "Pending") ?>
+              </p>
+              <form action='#Enroll' method='POST'>
+                <input type='hidden' name='_action' value='insert-vote' />
+                <button <?php echo ($alreadyVoted ? "disabled" : "") ?> type="submit"
+                  class="font-semibold <?php echo ($alreadyVoted ? "text-green-600" : "text-red-600 hover:text-blue-500") ?>  text-md">
+                  <?php echo ($alreadyVoted ? "Enrolled" : "Enroll") ?>
+                </button>
+              </form>
+
             </dd>
           </div>
           <div class="pt-6 sm:flex">
@@ -207,4 +224,3 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
 <?php
 include './footer.php';
 ?>
-

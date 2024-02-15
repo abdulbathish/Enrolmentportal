@@ -38,7 +38,7 @@ EOPK;
     define('SCOPE','openid profile');
     define('STATE','scpe1234');
     define('ACR_VALUES','mosip:idp:acr:generated-code mosip:idp:acr:biometrics mosip:idp:acr:linked-wallet');
-    define('CLAIMS','{"userinfo":{"individual_id":{"essential":true}, "name#en":{"essential":true},"name":{"essential":true},"phone_number":{"essential":true},"email":{"essential":true},"picture":{"essential":false},"gender":{"essential":true},"birthdate":{"essential":true},"address":{"essential":true}},"id_token":{}}');
+    define('CLAIMS','{"userinfo":{"individual_id":{"essential":true}, "name#en":{"essential":true},"name":{"essential":true},"phone_number":{"essential":false},"email":{"essential":true},"picture":{"essential":true},"gender":{"essential":true},"birthdate":{"essential":true},"address":{"essential":true}},"id_token":{}}');
     define('CLAIMS_LOCALES','en');
     define('UI_LOCALES','en-US');
 
