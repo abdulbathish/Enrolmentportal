@@ -2,9 +2,18 @@
 require_once './connection.php';
 require 'helpers/local-user.php';
 require 'helpers/user-session.php';
+require_once './helpers/jwt-verifier.php';
 
 if (session_status() == PHP_SESSION_NONE) {
   session_start();
+}
+
+if (JWT_DEBUG_MODE) {
+    JwtVerifier::debugLog("Login page accessed", [
+        'method' => $_SERVER['REQUEST_METHOD'],
+        'has_post_data' => !empty($_POST),
+        'session_id' => session_id()
+    ]);
 }
 
 $actionUrl = ESIGNET_SERVICE_URL . "/authorize";
@@ -17,33 +26,58 @@ function generateNonce($length = 6)
 }
 $nonce = generateNonce();
 
+if (JWT_DEBUG_MODE) {
+    JwtVerifier::debugLog("Generated OIDC parameters", [
+        'nonce' => $nonce,
+        'action_url' => $actionUrl,
+        'client_id' => CLIENT_ID,
+        'scope' => SCOPE,
+        'state' => STATE
+    ]);
+}
 
 $localLogin = null;
 if (isset($_POST["voterid"])) {
   $voter_ID = $_POST["voterid"];
   $password = $_POST["password"];
+  
+  if (JWT_DEBUG_MODE) {
+      JwtVerifier::debugLog("Local login attempt", ['voter_id' => $voter_ID]);
+  }
+  
   $localLogin = verfiyLogin($voter_ID, $password, $db_conn);
 
+  if (JWT_DEBUG_MODE) {
+      JwtVerifier::debugLog("Local login result", [
+          'success' => $localLogin !== null && $localLogin['data'] !== null,
+          'error' => $localLogin['error'] ?? null
+      ]);
+  }
 }
-
 
 if ($localLogin !== null && $localLogin['data'] !== null) {
   $_SESSION['local_ID_login'] = $localLogin['data']['voter_ID']; 
+  
+  if (JWT_DEBUG_MODE) {
+      JwtVerifier::debugLog("Local login session set", ['voter_id' => $localLogin['data']['voter_ID']]);
+  }
 }
 
 $loggedInUser = getLoggedInUser($db_conn);
 
 if($loggedInUser !== null) {
-  echo "succesfull login";
- header('Location: dashboard.php'); 
- exit();
+  if (JWT_DEBUG_MODE) {
+      JwtVerifier::debugLog("User already logged in, redirecting to dashboard", [
+          'login_type' => $loggedInUser['login_type']
+      ]);
+  }
+  echo "successful login";
+  header('Location: dashboard.php'); 
+  exit();
 }
-
 
 include './header.php';
 ?>
-
-
 
 <body>
   <div class="flex min-h-full flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -141,6 +175,9 @@ include './footer.php';
 ?>
 <script>
   document.getElementById('loginButton').addEventListener('click', function () {
+    <?php if (JWT_DEBUG_MODE) { ?>
+    console.log('eSignet login button clicked, initiating OIDC flow');
+    <?php } ?>
     document.getElementById('myForm').submit();
   });
 </script>

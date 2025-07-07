@@ -3,8 +3,16 @@ include './header.php';
 require_once './connection.php';
 require_once './helpers/user-session.php';
 require_once './helpers/vote.php';
+require_once './helpers/jwt-verifier.php';
 
 $loggedInUser = getLoggedInUser($db_conn);
+
+if (JWT_DEBUG_MODE) {
+    JwtVerifier::debugLog("Dashboard accessed", [
+        'has_logged_in_user' => $loggedInUser !== null,
+        'login_type' => $loggedInUser ? $loggedInUser['login_type'] : 'none'
+    ]);
+}
 
 if ($loggedInUser !== null && $loggedInUser['login_type'] === 'local') {
   $voter = $loggedInUser['user'];
@@ -20,6 +28,14 @@ if ($loggedInUser !== null && $loggedInUser['login_type'] === 'local') {
   $status = 'Not Verified';
   $image = 'pictures/nophoto.png';
 
+  if (JWT_DEBUG_MODE) {
+      JwtVerifier::debugLog("Local user data loaded", [
+          'voter_id' => $voter_ID,
+          'name' => $name,
+          'gender' => $gender,
+          'status' => $status
+      ]);
+  }
 }
 
 if ($loggedInUser !== null && $loggedInUser['login_type'] === 'esignet') {
@@ -34,16 +50,136 @@ if ($loggedInUser !== null && $loggedInUser['login_type'] === 'esignet') {
   $dobFmt = 'Y/m/d';
   $status = 'Verified';
   $image = $user['picture'];
+
+  if (JWT_DEBUG_MODE) {
+      JwtVerifier::debugLog("eSignet user data loaded", [
+          'sub' => $voter_unique_id,
+          'name' => $name,
+          'email' => $email,
+          'has_phone' => isset($user['phone_number']),
+          'status' => $status
+      ]);
+  }
 }
 
 if (isset($_POST['_action']) && $_POST['_action'] = 'insert-vote') {
+  if (JWT_DEBUG_MODE) {
+      JwtVerifier::debugLog("Vote enrollment attempted", ['voter_unique_id' => $voter_unique_id]);
+  }
   insertVoter($db_conn, $voter_unique_id);
 }
 
 $alreadyVoted = hasAlreadyVoted($db_conn, $voter_unique_id);
 $Elections = array("Lok Sabha 2024", "Kerala State Election");
 
+if (JWT_DEBUG_MODE) {
+    JwtVerifier::debugLog("Dashboard data prepared", [
+        'already_voted' => $alreadyVoted,
+        'is_major' => isPersonMajor($dateOfBirth, $dobFmt),
+        'elections_count' => count($Elections)
+    ]);
+}
+
+// Check JWT verification status (only for eSignet users)
+$jwtVerificationStatus = 'NOT_APPLICABLE';
+$jwtVerificationError = '';
+$jwtVerificationTime = null;
+
+if ($loggedInUser !== null && $loggedInUser['login_type'] === 'esignet') {
+    $jwtVerificationStatus = $loggedInUser['user']['_jwt_verification_status'] ?? 'UNKNOWN';
+    $jwtVerificationError = $loggedInUser['user']['_jwt_verification_error'] ?? '';
+    $jwtVerificationTime = $loggedInUser['user']['_jwt_verification_time'] ?? null;
+}
+
+// Function to get status display info
+function getVerificationStatusDisplay($status) {
+    switch ($status) {
+        case 'SUCCESS':
+            return ['color' => 'green', 'text' => 'Verified', 'description' => 'JWT signature verified successfully'];
+        case 'FAILED':
+            return ['color' => 'red', 'text' => 'Verification Failed', 'description' => 'JWT signature verification failed'];
+        case 'NOT_APPLICABLE':
+            return ['color' => 'blue', 'text' => 'Not Applicable', 'description' => 'Response was plain JSON, not JWT'];
+        case 'ERROR':
+            return ['color' => 'orange', 'text' => 'Error', 'description' => 'Error occurred during verification'];
+        default:
+            return ['color' => 'gray', 'text' => 'Unknown', 'description' => 'Verification status unknown'];
+    }
+}
+
+$statusDisplay = getVerificationStatusDisplay($jwtVerificationStatus);
 ?>
+
+<style>
+.verification-panel {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px auto;
+    max-width: 800px;
+}
+
+.verification-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.status-success { background-color: #d4edda; color: #155724; }
+.status-failed { background-color: #f8d7da; color: #721c24; }
+.status-not-applicable { background-color: #d1ecf1; color: #0c5460; }
+.status-error { background-color: #fff3cd; color: #856404; }
+.status-unknown { background-color: #e2e3e5; color: #383d41; }
+
+.verification-details {
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.error-detail {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: #721c24;
+}
+
+.debug-panel {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 20px auto;
+    max-width: 800px;
+}
+
+.debug-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    margin-right: 10px;
+}
+
+.debug-btn:hover {
+    background-color: #0056b3;
+}
+</style>
 
 <div class="mx-auto max-w-7xl pt-0 lg:flex lg:gap-x-16 lg:px-8">
   <aside
@@ -221,6 +357,56 @@ $Elections = array("Lok Sabha 2024", "Kerala State Election");
     </div>
   </main>
 </div>
+
+<!-- Security Verification Status (only for eSignet users) -->
+<?php if ($loggedInUser !== null && $loggedInUser['login_type'] === 'esignet'): ?>
+<div class="verification-panel">
+    <h3>Security Token Verification Status</h3>
+    <div class="verification-status">
+        <span class="status-badge status-<?= strtolower(str_replace(['SUCCESS', 'FAILED', 'NOT_APPLICABLE', 'ERROR', 'UNKNOWN'], 
+            ['success', 'failed', 'not-applicable', 'error', 'unknown'], $jwtVerificationStatus)) ?>">
+            <?= $statusDisplay['text'] ?>
+        </span>
+        <span><?= $statusDisplay['description'] ?></span>
+    </div>
+    
+    <div class="verification-details">
+        <?php if ($jwtVerificationTime): ?>
+            <p><strong>Verified at:</strong> <?= date('Y-m-d H:i:s', $jwtVerificationTime) ?></p>
+        <?php endif; ?>
+        
+        <?php if ($jwtVerificationStatus === 'SUCCESS'): ?>
+            <p style="color: green;">Your tokens have been cryptographically verified against MOSIP's public keys.</p>
+        <?php elseif ($jwtVerificationStatus === 'FAILED'): ?>
+            <p style="color: red;">Token verification failed. This could indicate a security issue.</p>
+        <?php elseif ($jwtVerificationStatus === 'NOT_APPLICABLE'): ?>
+            <p style="color: blue;">The server returned plain JSON instead of JWT tokens.</p>
+        <?php elseif ($jwtVerificationStatus === 'UNKNOWN'): ?>
+            <p style="color: orange;">Verification status could not be determined.</p>
+        <?php endif; ?>
+        
+        <?php if ($jwtVerificationError): ?>
+            <div class="error-detail">
+                <strong>Error Details:</strong> <?= htmlspecialchars($jwtVerificationError) ?>
+            </div>
+        <?php endif; ?>
+    </div>
+</div>
+<?php endif; ?>
+
+<!-- Developer Tools -->
+<?php if (JWT_DEBUG_MODE): ?>
+<div class="debug-panel">
+    <h4>Developer Tools</h4>
+    <p>Debug mode is enabled for development and testing purposes.</p>
+    <p>
+        <a href="test-jwt.php" class="debug-btn">Test Token Verification</a>
+        <a href="log-viewer.php" class="debug-btn">View System Logs</a>
+        <a href="logout.php" class="debug-btn" style="background-color: #dc3545;">Logout</a>
+    </p>
+</div>
+<?php endif; ?>
+
 <?php
 include './footer.php';
 ?>
