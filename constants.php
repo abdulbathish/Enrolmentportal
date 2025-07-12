@@ -32,7 +32,7 @@ EOPK;
 
     define('CLIENT_PRIVATE_KEY', $private_key);
     define('CLIENT_ASSERTION_TYPE', 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer');
-    define('ESIGNET_SERVICE_URL', "https://esignet.dst-dev.mosip.net");
+    define('ESIGNET_SERVICE_URL', "https://esignet-mosipid.dst-dev.mosip.net");
     define('USERINFO_PRIVATE_KEY', $private_key);
     define('CLIENT_ID', '917vJsVG-eyezMz88_kf6TCp56ZFXl7t_iDwvCw5LI8');
     define('SCOPE','openid');
@@ -42,14 +42,14 @@ EOPK;
     define('CLAIMS_LOCALES','en');
     define('UI_LOCALES','en-US');
 
-    define('CALLBACK_URL', 'http://localhost/Enrolmentportal/callback.php');
+    define('CALLBACK_URL', 'http://localhost/enrolmentPortal/callback.php');
 
     define("DB_HOST", "localhost");
     define("DB_USERNAME", "root");
     define("DB_PASSWORD", "");
     define("DB_NAME", "voter_database");
 
-    define('ESIGNET_JWKS_URL', 'https://esignet.dst-dev.mosip.net/.well-known/jwks.json');
+    define('ESIGNET_JWKS_URL', 'https://esignet-mosipid.dst-dev.mosip.net/.well-known/jwks.json');
     define('ESIGNET_JWT_DEFAULT_ALG', 'RS256');
     
     define('JWT_DEBUG_MODE', true);
